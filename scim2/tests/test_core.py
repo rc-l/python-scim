@@ -1,0 +1,36 @@
+from scim2.core import ResourceBase
+from scim2.attributes import Singular, MultiValue, Complex
+
+class TestResourceBase:
+# Create user here for testing so it will not be affected by changed in the core user
+    class User(ResourceBase):
+        username = Singular()
+        emails = MultiValue()
+
+    def test_attribute_sharing(self):
+        """Attributes for two instances should not be shared"""
+        # Check if instance and class attributes are different
+        assert self.User().username is not self.User.username
+
+        # Check if two instances have different attributes
+        assert self.User().username is not self.User().username
+
+        # Check value assignment is not shared
+        userA = self.User()
+        userB = self.User()
+        userA.username.value = "userA"
+        assert userA.username.value == "userA"
+        assert userB.username.value is None
+
+    def test_attribute_assignment(self):
+        """Assign attributes in python code"""
+        # Pythonic attribute assignment
+        user = self.User()
+        user.username.value = "test"
+        assert user.dict() == {"username": "test"}
+
+    def test_creation_from_dict(self):
+        """Create a User object from a dictionary"""
+        user = self.User({"username": "test", "emails": ["user@example.com", "admin@something.com"]})
+        assert user.username.value == "test"
+        assert user.emails.value == ["user@example.com", "admin@something.com"]
