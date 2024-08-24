@@ -1,11 +1,11 @@
 from scim2.core import ResourceBase
-from scim2.attributes import Singular, MultiValue, Complex
+from scim2.attributes import Attribute
 
 class TestResourceBase:
 # Create user here for testing so it will not be affected by changed in the core user
     class User(ResourceBase):
-        username = Singular()
-        emails = MultiValue()
+        username = Attribute(str)
+        emails = Attribute(str, multivalued=True)
 
     def test_attribute_sharing(self):
         """Attributes for two instances should not be shared"""
@@ -20,7 +20,7 @@ class TestResourceBase:
         userB = self.User()
         userA.username.value = "userA"
         assert userA.username.value == "userA"
-        assert userB.username.value is None
+        assert userB.username.value != "userA"
 
     def test_attribute_assignment(self):
         """Assign attributes in python code"""

@@ -13,6 +13,6 @@ class ResourceBase(Base):
         # Load the SCIM representation if provided
         self.load(scim_repr)
 
-class User(ResourceBase):
-    username = Singular()
-    emails = MultiValue()
+# class User(ResourceBase):
+#     username = Singular()
+#     emails = MultiValue()
