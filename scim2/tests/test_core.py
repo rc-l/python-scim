@@ -1,11 +1,12 @@
 from scim2.core import ResourceBase
 from scim2.attributes import Attribute
+from scim2.datatypes import String
 
 class TestResourceBase:
 # Create user here for testing so it will not be affected by changed in the core user
     class User(ResourceBase):
-        username = Attribute(str)
-        emails = Attribute(str, multivalued=True)
+        username = Attribute(String)
+        emails = Attribute(String, multivalued=True)
 
     def test_attribute_sharing(self):
         """Attributes for two instances should not be shared"""

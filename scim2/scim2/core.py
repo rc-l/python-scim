@@ -61,6 +61,13 @@ class ResourceBase(Base):
                     self._schema_attrs[k].load(v)
         return self
         
+class ComplexBase(ResourceBase):
+    """Base class for complex attributes"""
+    
+    @classmethod
+    def validate(cls, value):
+        """Validate the complex attribute is of the correct type"""
+        return isinstance(value, cls)
 
 # class User(ResourceBase):
 #     username = Singular()

@@ -1,5 +1,6 @@
-from copy import deepcopy
 import json
+
+from scim2.datatypes import DataTypeBase
 
 # Base class for resource base.
 # This is to later check for complex attributes.
@@ -20,6 +21,10 @@ class Attribute():
             self._value = [self._type()]
         else:
             self._value = []
+
+        # Check if type is valid
+        if not issubclass(self._type, DataTypeBase) and not self.complex:
+            raise ValueError("Must provde a valid data type (subclass of DataType or a Complex)")
 
     def dict(self):
         if self.complex:
@@ -56,8 +61,14 @@ class Attribute():
     @value.setter
     def value(self, value):
         if not self.multivalued:
+            # Check if value is of the correct type
+            if not self._type.validate(value):
+                raise ValueError("Value is not of the correct type")
             self._value[0] = value
         elif isinstance(value, list):
+            # Check if all values are of the correct type
+            if not all(self._type.validate(v) for v in value):
+                raise ValueError("Not all values are of the correct type")
             self._value = value
         else:
             raise ValueError("Value must be a list if multivalued")

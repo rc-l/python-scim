@@ -1,89 +1,90 @@
 from scim2.attributes import Attribute
-from scim2.core import ResourceBase
+from scim2.core import ResourceBase, ComplexBase
+from scim2.datatypes import String
 
-class Fruit(ResourceBase):
+class Fruit(ComplexBase):
     """Class for testing Complex attribute"""
-    name = Attribute(str)
-    color = Attribute(str)
+    name = Attribute(String)
+    color = Attribute(String)
 
 class TestSingular:
     def test_value(self):
         """Test setting and getting value"""
-        s = Attribute(str)
+        s = Attribute(String)
         s.value = "test"
         assert s.value == "test"
 
     def test_dict(self):
         """Test dict method"""
-        s = Attribute(str)
+        s = Attribute(String)
         s.value = "test"
         assert s.dict() == "test"
 
     def test_instance_separation(self):
         """Test if two instances don't share a state"""
-        s = Attribute(str)
+        s = Attribute(String)
         s.value = "test"
         assert Attribute.value != "test"
         assert s.value == "test"
 
-        a = Attribute(str)
+        a = Attribute(String)
         a.value = "different"
         assert a.value == "different"
         assert s.value == "test"
 
     def test_str(self):
         """Test str method"""
-        s = Attribute(str)
+        s = Attribute(String)
         s.value = "test"
         assert str(s) == "test"
 
     def test_load(self):
         """Test load method"""
-        s = Attribute(str)
+        s = Attribute(String)
         s.load("abc")
         assert s.value == "abc"
 
 class TestMultiValue:
     def test_value(self):
         """Test setting and getting value"""
-        m = Attribute(str, multivalue=True)
+        m = Attribute(String, multivalued=True)
         m.value = ["test"]
         assert m.value == ["test"]
 
     def test_append(self):
         """Test adding to list"""
-        m = Attribute(str, multivalue=True)
+        m = Attribute(String, multivalued=True)
         m.value = ["test"]
         m.value.append("new")
         assert m.value == ["test", "new"]
 
     def test_dict(self):
         """Test dict method"""
-        m = Attribute(str, multivalue=True)
+        m = Attribute(String, multivalued=True)
         m.value = ["test"]
         assert m.dict() == ["test"]
 
     def test_instance_separation(self):
         """Test if two instances don't share a state"""
-        m = Attribute(str, multivalue=True)
+        m = Attribute(String, multivalued=True)
         m.value = ["test"]
         assert Attribute.value != ["test"]
         assert m.value == ["test"]
 
-        a = Attribute(str, multivalue=True)
+        a = Attribute(String, multivalued=True)
         a.value = ["different"]
         assert a.value == ["different"]
         assert m.value == ["test"]
 
     def test_str(self):
         """Test str method"""
-        m = Attribute(str, multivalue=True)
+        m = Attribute(String, multivalued=True)
         m.value = ["test"]
         assert str(m) == '["test"]'
 
     def test_load(self):
         """Test load method"""
-        m = Attribute(str, multivalue=True)
+        m = Attribute(String, multivalued=True)
         m.load(["abc"])
         assert m.value == ["abc"]
 
