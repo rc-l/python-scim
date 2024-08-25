@@ -1,6 +1,7 @@
-from scim2.attributes import Base, Attribute
+from scim2.attributes import Attribute
+from scim2.core import ResourceBase
 
-class Fruit(Base):
+class Fruit(ResourceBase):
     """Class for testing Complex attribute"""
     name = Attribute(str)
     color = Attribute(str)
@@ -155,7 +156,10 @@ class TestComplexMultiValue:
     def test_dict(self):
         """Test dict method"""
         c = Attribute(Fruit, multivalued=True)
-        c.value = [Fruit().load({"name": "apple", "color": "red"})]
+        f1 = Fruit()
+        f1.name.value = "apple"
+        f1.color.value = "red"
+        c.value = [f1]
         assert c.dict() == [{"name": "apple", "color": "red"}]
 
     def test_instance_separation(self):
