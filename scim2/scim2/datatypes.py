@@ -8,6 +8,18 @@ class DataTypeBase:
         """Validate if the value is of the correct type"""
         return isinstance(value, cls.base_type)
     
+    @classmethod
+    def convert(cls, value):
+        """Convert the value to the correct type"""
+        return cls.base_type(value)
+    
+    @classmethod
+    def prep_json(cls, value):
+        """Prepare the value for later json serialization.
+        Changes may not be necessary for every data type the default is to return the value unchanged
+        Override function in subclass to change this behavior"""
+        return value
+    
 class String(DataTypeBase):
     base_type = str
     name = "string"
@@ -28,9 +40,36 @@ class Boolean(DataTypeBase):
     base_type = bool
     name = "boolean"
 
+    @classmethod
+    def convert(cls, value):
+        if isinstance(value, bool):
+            return value
+        elif isinstance(value, str):
+            if value.lower() == "true":
+                return True
+            elif value.lower() == "false":
+                return False
+            else:
+                raise ValueError("Cannot convert value to boolean")
+        else:
+            raise TypeError("This type/value does not represent a boolean")
+
 class DateTime(DataTypeBase):
     base_type = datetime
     name = "dateTime"
+
+    @classmethod
+    def convert(cls, value):
+        if isinstance(value, str):
+            return datetime.fromisoformat(value)
+        elif isinstance(value, cls.base_type):
+            return value
+        else:
+            raise TypeError("This type does not convert to datetime")
+        
+    @classmethod
+    def prep_json(cls, value):
+        return value.isoformat()
 
 class Binary(DataTypeBase):
 
