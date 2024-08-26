@@ -1,6 +1,6 @@
 from scim2.attributes import Attribute
 from scim2.core import ResourceBase, ComplexBase
-from scim2.datatypes import String
+from scim2.datatypes import String, Integer
 
 class Fruit(ComplexBase):
     """Class for testing Complex attribute"""
@@ -13,6 +13,12 @@ class TestSingular:
         s = Attribute(String)
         s.value = "test"
         assert s.value == "test"
+
+        a = Attribute(Integer)
+        a.value = 1
+        assert a.value == 1
+        a.value = "2"
+        assert a.value == 2
 
     def test_dict(self):
         """Test dict method"""

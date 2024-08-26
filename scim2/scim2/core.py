@@ -68,6 +68,16 @@ class ComplexBase(ResourceBase):
     def validate(cls, value):
         """Validate the complex attribute is of the correct type"""
         return isinstance(value, cls)
+    
+    @classmethod
+    def convert(cls, value):
+        """Convert the complex attribute to the correct type"""
+        if isinstance(value, cls):
+            return value
+        elif isinstance(value, dict):
+            return cls(value)
+        else:
+            raise ValueError("Cannot convert value to complex attribute")
 
 # class User(ResourceBase):
 #     username = Singular()

@@ -61,15 +61,13 @@ class Attribute():
     @value.setter
     def value(self, value):
         if not self.multivalued:
-            # Check if value is of the correct type
-            if not self._type.validate(value):
-                raise TypeError("Value is not of the correct type")
-            self._value[0] = value
+            # Convert the value to the correct type
+            self._value[0] = self._type.convert(value)
         elif isinstance(value, list):
-            # Check if all values are of the correct type
-            if not all(self._type.validate(v) for v in value):
-                raise TypeError("Not all values are of the correct type")
-            self._value = value
+            try:
+                self._value = [self._type.convert(v) for v in value]
+            except TypeError:
+                raise TypeError("All values in the list must be of the correct type")
         else:
             raise TypeError("Value must be a list if multivalued")
     
