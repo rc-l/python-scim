@@ -23,15 +23,16 @@ class Attribute():
 
     def dict(self):
         if self.complex:
+            # Cascade down to the attributes making up the complex attribute
             if self.multivalued:
                 return [v.dict() for v in self._value]
             else:
                 return self._value[0].dict()
         else:
             if self.multivalued:
-                return self._value
+                return [self._type.prep_json(v) for v in self._value]
             else:
-                return self._value[0]
+                return self._type.prep_json(self._value[0])
     
     def load(self, value):
         if self.complex:
