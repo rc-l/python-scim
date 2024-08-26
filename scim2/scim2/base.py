@@ -75,6 +75,7 @@ class Attribute():
         else:
             return str(dict_value)
 
+
 class ResourceBase():
     """Base class for SCIM resources which form the root of a SCIM object"""
 
@@ -132,7 +133,8 @@ class ResourceBase():
                 if k in self._schema_attrs:
                     self._schema_attrs[k].load(v)
         return self
-        
+
+    
 class ComplexBase(ResourceBase):
     """Base class for complex attribute content"""
     
