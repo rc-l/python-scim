@@ -1,5 +1,4 @@
-from scim2.core import ResourceBase
-from scim2.attributes import Attribute
+from scim2.base import Attribute, ResourceBase
 from scim2.datatypes import String
 
 class TestResourceBase:

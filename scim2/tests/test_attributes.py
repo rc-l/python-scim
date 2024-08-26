@@ -1,5 +1,4 @@
-from scim2.attributes import Attribute
-from scim2.core import ResourceBase, ComplexBase
+from scim2.base import Attribute, ResourceBase, ComplexBase
 from scim2.datatypes import String, Integer
 
 class Fruit(ComplexBase):
