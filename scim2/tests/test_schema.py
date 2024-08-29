@@ -40,10 +40,29 @@ class TestBaseSchema:
             "id": "foo",
             "externalId": "bar",
             "meta": {
-                "resourceType": "BaseObject",
+                "resourceType": BaseSchema._info_name,
                 "created": "2012-01-23T04:56:22+00:00",
                 "lastModified": "2013-01-23T04:56:22+00:00",
-                "location": "https://example.com/Users/test",
+                "location": "{basepath}/BaseSchema",
                 "version": 'W/"3694e05e9eee594"'
             }
         }
+
+    def test_from_json(self):
+        data = """{
+            "id": "test", 
+            "externalId": "foo456",
+            "meta": {
+                "resourceType": "BaseObject",
+                "created": "2015-06-09T04:56:22Z",
+                "lastModified": "2015-06-09T05:56:22Z",
+                "location": "https://example.com/Users/test"
+            }
+        }"""
+        user = BaseSchema(data)
+        assert user.id.value == "test"
+        assert user.externalId.value == "foo456"
+        assert user.meta.value.resourceType.value == "BaseObject"
+        assert user.meta.value.created.value == datetime(2015, 6, 9, 4, 56, 22, tzinfo=timezone.utc)
+        assert user.meta.value.lastModified.value == datetime(2015, 6, 9, 5, 56, 22, tzinfo=timezone.utc)
+        assert user.meta.value.location.value == "https://example.com/Users/test"
