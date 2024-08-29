@@ -1,4 +1,4 @@
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 import pytest
 
 from scim2.datatypes import String, Integer, Decimal, Boolean, DateTime, Binary, Reference
@@ -85,6 +85,7 @@ class TestDateTime:
         now = datetime.now()
         assert DateTime.convert(now) == now
         assert DateTime.convert("2008-01-23T04:56:22Z") == datetime(2008, 1, 23, 4, 56, 22, tzinfo=timezone.utc)
+        assert DateTime.convert("2008-01-23T04:56:22+02:00") == datetime(2008, 1, 23, 4, 56, 22, tzinfo=timezone(timedelta(hours=2)))
         with pytest.raises(ValueError):
             DateTime.convert("1")
         with pytest.raises(ValueError):
