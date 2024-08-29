@@ -16,20 +16,21 @@ class MetaData(ComplexBase):
     location = Attribute(String)
     version = Attribute(String)
 
-
 class BaseSchema(ResourceBase):
     """Base class for schema objects"""
-    
-    class _Info:
-        """Information about the schema"""
-        name = "BaseSchema"
+
+    id = Attribute(String, required=True)
+    externalId = Attribute(String)
+    meta = Attribute(MetaData)
 
     @classproperty
     def _info_name(cls):
+        """Name of the schema"""
         return cls.__name__
     
     @classproperty
     def _info_location(cls):
+        """Location of the resource on the server"""
         # Leaving basepath a placeholder for later formatting
         return "{basepath}/" + cls.__name__
 
@@ -41,17 +42,7 @@ class BaseSchema(ResourceBase):
         return super_dict
 
 
-    id = Attribute(String, required=True)
-    externalId = Attribute(String)
-    meta = Attribute(MetaData)
-
-
 class User(BaseSchema):
-
-    class _Info:
-        """Information about the schema"""
-        # Maybe make dynamic based of class name
-        name = "User"
 
     username = Attribute(String)
     emails = Attribute(String, multivalued=True)
