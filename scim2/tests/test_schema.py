@@ -1,8 +1,11 @@
 from datetime import datetime, timezone
 
 from scim2.core import BaseSchema
+from scim2.base import Attribute, ResourceBase, ComplexBase
+from scim2.datatypes import *
 
 class TestBaseSchema:
+    """Tests for the BaseSchema class and generic functions"""
 
     def test_from_dict(self):
         """Test creating a BaseSchema object from a dictionary"""
@@ -66,3 +69,21 @@ class TestBaseSchema:
         assert user.meta.value.created.value == datetime(2015, 6, 9, 4, 56, 22, tzinfo=timezone.utc)
         assert user.meta.value.lastModified.value == datetime(2015, 6, 9, 5, 56, 22, tzinfo=timezone.utc)
         assert user.meta.value.location.value == "https://example.com/Users/test"
+
+class TestInheritence:
+    """Test inheritance of BaseSchema"""
+
+    # Define a new schema that inherits from BaseSchema
+    class TestSchema(BaseSchema):
+        fruit = Attribute(String)
+
+    def test_from_dict(self):
+        """Test with attributes from both BaseSchema and TestSchema to check if inheritance works"""
+        data = {
+            "id": "inheritencTest",
+            "fruit": "kiwi"
+        }
+
+        o = self.TestSchema(data)
+        assert o.id.value == "inheritencTest"
+        assert o.fruit.value == "kiwi"

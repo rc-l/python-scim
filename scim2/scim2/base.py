@@ -1,7 +1,7 @@
 from copy import deepcopy
 import json
 
-from scim2.datatypes import DataTypeBase
+from .datatypes import DataTypeBase, String
 
 class Attribute():
     """Base class for all attributes
@@ -16,6 +16,20 @@ class Attribute():
             self._value = [self._type()]
         else:
             self._value = []
+
+        # Remaining attribute properties
+        self.description = kwargs.get("description", "")
+        self.required = kwargs.get("required", False)
+        self.mutability = kwargs.get("mutability", "readWrite")
+        assert self.mutability in ("readOnly", "readWrite", "immutable", "writeOnly")
+        self.caseExact = kwargs.get("caseExact", False)
+        self.returned = kwargs.get("returned", "default")
+        assert self.returned in ("always", "never", "default", "request")
+        self.uniqueness = kwargs.get("uniqueness", "none")
+        assert self.uniqueness in ("none", "server", "global")
+        # Only set name if it differs from the attribute name in the parent
+        self.name = kwargs.get("name", None)
+        # TODO: implement referenceTypes
 
         # Check if type is valid
         if not issubclass(self._type, DataTypeBase) and not self.complex:
@@ -76,6 +90,30 @@ class Attribute():
         else:
             return str(dict_value)
 
+    def get_schema(self):
+        """Get the schema representation for the attribute
+        
+        RFC7643 section 7
+        """
+        schema = {
+            "required": self.required,
+            "mutability": self.mutability,
+            "returned": self.returned,
+            "uniqueness": self.uniqueness,
+            "description": self.description,
+            "multiValued": self.multivalued,
+            "type": self._type.name
+        }
+        if self.complex:
+            schema["subAttributes"] = self._type.get_schema()
+
+        if isinstance(self._type, String):
+            schema["caseExact"] = self.caseExact
+        if self.name:
+            schema["name"] = self.name
+
+        return schema
+        
 
 class ResourceBase():
     """Base class for SCIM resources which form the root of a SCIM object"""
@@ -94,9 +132,27 @@ class ResourceBase():
         return self._filter_schema_attrs(vars(self))
 
     @classmethod
-    def _class_schema_attrs(cls):
-        """Get all the attributes that are part of the schema to be used for class not class instance"""
-        return cls._filter_schema_attrs(vars(cls))
+    def _class_schema_attrs(cls, shallow=False):
+        """Get all the attributes that are part of the schema to be used for class not class instance
+        
+        Args:
+            shallow (bool): If True, only return the schema attributes of the current
+
+        Returns:
+            dict: A dictionary of schema attributes
+        """
+        # TODO: why did I split this into separate methods for class and class instance?
+        # Get attributes of superclass
+        inherited_attrs = {}
+        for base in cls.__bases__:
+            if issubclass(base, ResourceBase):
+                inherited_attrs.update(base._class_schema_attrs())
+
+        # Get attributes of current class
+        own_attrs = cls._filter_schema_attrs(vars(cls))
+
+        # Merge the two sets of attributes, with the subclass attributes taking precedence
+        return {**inherited_attrs, **own_attrs}
 
     @staticmethod
     def _filter_schema_attrs(attrs):
@@ -135,6 +191,21 @@ class ResourceBase():
                     self._schema_attrs[k].load(v)
         return self
 
+    @classmethod
+    def get_schema(cls):
+        """Get the schema representation for the class
+        The resource object only needs to get the attributes. Other properties are already
+        known by parent.
+        
+        RFC7643 section 7
+        """
+        attributes = []
+        for k, v in cls._class_schema_attrs().items():
+            attrschema = v.get_schema()
+            if not "name" in attrschema:
+                attrschema["name"] = k
+            attributes.append(attrschema)
+        return attributes
     
 class ComplexBase(ResourceBase):
     """Base class for complex attribute content"""

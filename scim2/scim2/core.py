@@ -41,7 +41,6 @@ class BaseSchema(ResourceBase):
         super_dict['meta']["location"] = self._info_location
         return super_dict
 
-
 class User(BaseSchema):
 
     username = Attribute(String)
