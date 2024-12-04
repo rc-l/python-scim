@@ -56,3 +56,32 @@ def test_minimal_from_json():
     assert user.meta.value.created.value == datetime(2010, 1, 23, 4, 56, 22, tzinfo=timezone.utc)
     assert user.meta.value.lastModified.value == datetime(2011, 5, 13, 4, 42, 34, tzinfo=timezone.utc)
     # Ignoring location since this is generated on dictionary creation
+
+def test_resource_type_representation():
+    """Test the resource type representation of the User class
+    
+    Example from RFC7643 section 8.3"""
+    # Note worthy differences with RFC:
+    # - The location is not filled in
+    # - The schemaExtensions are not required here
+
+    output = User.resource_type_representation()
+    assert output == {
+        "schemas": ["urn:ietf:params:scim:schemas:core:2.0:ResourceType"],
+        "id": "User",
+        "name": "User",
+        "endpoint": "/Users",
+        "description": "User Account",
+        "schema": "urn:ietf:params:scim:schemas:core:2.0:User",
+        "schemaExtensions": [
+            {
+                "schema":
+                "urn:ietf:params:scim:schemas:extension:enterprise:2.0:User",
+                "required": False
+            }
+        ],
+        "meta": {
+            "resourceType": "ResourceType",
+            "location": "{basepath}/ResourceTypes/User"
+        }  
+    }

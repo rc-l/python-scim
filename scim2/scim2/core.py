@@ -1,5 +1,6 @@
 from .base import Attribute, ResourceBase, ComplexBase
 from .datatypes import *
+from .helpers import inheritors
 
 class classproperty:
     def __init__(self, func):
@@ -29,7 +30,7 @@ class BaseSchema(ResourceBase):
         """Metadata for the SCIM object"""
 
         # Left name undefined on purpose, should be overridden by subclasses
-        endpoint = classproperty(lambda cls: cls.name + "s/")
+        endpoint = classproperty(lambda cls: "/" + cls.name + "s")
         schema = classproperty(lambda cls: f'urn:ietf:params:scim:schemas:extension:2.0:{cls.name}')
         id = classproperty(lambda cls: cls.name)
         description = ""
@@ -39,7 +40,7 @@ class BaseSchema(ResourceBase):
         super_dict = super().dict()
         super_dict['schemas'] = self.list_schemas()
         super_dict['meta']["resourceType"] = self.ScimInfo.name
-        super_dict['meta']["location"] = "{basepath}/" + self.ScimInfo.endpoint + super_dict['id']
+        super_dict['meta']["location"] = "{basepath}" + self.ScimInfo.endpoint + "/" + super_dict['id']
         return super_dict
     
     @classmethod
@@ -85,6 +86,39 @@ class BaseSchema(ResourceBase):
         }
         return schema
     
+    @classmethod
+    def resource_type_representation(cls):
+        """Generate a resource type representation.
+
+        According to RFC7643 section 6 and in support of RFC7644 section 4."""
+        output = dict()
+        output['schemas'] = ["urn:ietf:params:scim:schemas:core:2.0:ResourceType"]
+        output['meta'] = {}
+        output['meta']['resourceType'] = "ResourceType"
+        output['meta']['location'] = "{basepath}/ResourceTypes/" + cls.ScimInfo.name
+        output['endpoint'] = cls.ScimInfo.endpoint
+        output['schema'] = cls.ScimInfo.schema
+        output['name'] = cls.ScimInfo.name
+        output['id'] = cls.ScimInfo.id
+
+        # Description optional
+        try:
+            output['description'] = cls.ScimInfo.description
+        except AttributeError:
+            output['description'] = ""
+
+        # Schema extensions
+        # All the schemas that extend this schema
+        subclasses = inheritors(cls)
+        output['schemaExtensions'] = [
+            {
+                "schema": s.ScimInfo.schema,
+                "required": False
+            } 
+            for s in subclasses if hasattr(s, 'ScimInfo')
+        ]
+
+        return output
 
 class User(BaseSchema):
 
@@ -94,3 +128,11 @@ class User(BaseSchema):
         schema = "urn:ietf:params:scim:schemas:core:2.0:User"
 
     userName = Attribute(String, required=True)
+
+class EnterpriseUser(User):
+
+    class ScimInfo(User.ScimInfo):
+        name = "EnterpriseUser"
+        description = "Enterprise User Account"
+        schema = "urn:ietf:params:scim:schemas:extension:enterprise:2.0:User"
+
