@@ -37,10 +37,26 @@ class BaseSchema(ResourceBase):
     def dict(self):
         """Convert the object to a dictionary"""
         super_dict = super().dict()
+        super_dict['schemas'] = self.list_schemas()
         super_dict['meta']["resourceType"] = self.ScimInfo.name
         super_dict['meta']["location"] = "{basepath}/" + self.ScimInfo.endpoint + super_dict['id']
         return super_dict
     
+    @classmethod
+    def list_schemas(cls):
+        """List the schemas for the ResourceType
+        
+        This list includes the schemas that this resource extends through inheritence
+        """
+        schemas = [cls.ScimInfo.schema]
+        for base in cls.__bases__:
+            # Get the schema from other resource schema classes but not from BaseSchema
+            if issubclass(base, BaseSchema) and base != BaseSchema:
+                schemas.extend(base.list_schemas())
+        # Remove duplicates
+        schemas = list(set(schemas))
+        return schemas
+
     @classmethod
     def get_schema(cls):
         """Get the schema representation for the class
@@ -75,5 +91,6 @@ class User(BaseSchema):
     class ScimInfo(BaseSchema.ScimInfo):
         name = "User"
         description = "User Account"
-    username = Attribute(String)
-    emails = Attribute(String, multivalued=True)
+        schema = "urn:ietf:params:scim:schemas:core:2.0:User"
+
+    userName = Attribute(String, required=True)

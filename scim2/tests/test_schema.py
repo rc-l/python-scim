@@ -108,3 +108,21 @@ class TestInheritence:
         assert schema['meta']['resourceType'] == 'Schema'
         assert schema['meta']['location'] == "{basepath}/Schemas/" + TestSchema.ScimInfo.schema
         assert len(schema['attributes']) == 2
+
+    def test_list_schemas(self):
+        """Test listing the schemas"""
+        # Test with a single level, the base class should not be in the list
+        schemas = TestSchema.list_schemas()
+        assert len(schemas) == 1
+        assert schemas[0] == TestSchema.ScimInfo.schema
+
+        # Test with a subclass that extends the schema
+        # Schema of both superclass and subclass should be in the list
+        class ExtensionSchema(TestSchema):
+            class ScimInfo(TestSchema.ScimInfo):
+                name = "ExtensionSchema"
+
+        schemas = ExtensionSchema.list_schemas()
+        assert len(schemas) == 2
+        assert TestSchema.ScimInfo.schema in schemas
+        assert ExtensionSchema.ScimInfo.schema in schemas
