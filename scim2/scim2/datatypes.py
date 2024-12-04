@@ -2,7 +2,7 @@
 
 from datetime import datetime
 
-__all__ = ["String", "Integer", "Decimal", "Boolean", "DateTime"]
+__all__ = ["String", "Integer", "Decimal", "Boolean", "DateTime", "Binary", "Reference"]
 
 class DataTypeBase:
     @classmethod
@@ -74,11 +74,13 @@ class DateTime(DataTypeBase):
         return value.isoformat()
 
 class Binary(DataTypeBase):
+    name = "binary"
 
     def validate(cls, value):
         raise NotImplementedError("Binary data type not implemented yet")
 
 class Reference(DataTypeBase):
+    name = "reference"
 
     def validate(cls, value):
         raise NotImplementedError("Reference data type not implemented yet")
