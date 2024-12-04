@@ -81,4 +81,4 @@ class Binary(DataTypeBase):
 class Reference(DataTypeBase):
 
     def validate(cls, value):
-        raise NotImplementedError("Binary data type not implemented yet")
+        raise NotImplementedError("Reference data type not implemented yet")
