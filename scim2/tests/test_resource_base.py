@@ -28,7 +28,7 @@ class TestResourceBase:
         # Pythonic attribute assignment
         user = self.User()
         user.username.value = "test"
-        assert user.dict() == {'username': 'test', 'emails': []}
+        assert user.dict() == {'username': 'test'}
 
     def test_creation_from_dict(self):
         """Create a User object from a dictionary"""

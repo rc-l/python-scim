@@ -173,7 +173,8 @@ class ResourceBase():
         output = {}
         for k, v in self._schema_attrs.items():
             value = v.dict()
-            if value not in [None, {}]:
+            # Do not include attributes that have no value, a complex type for which all subattributes have no value, or multivalue with length 0
+            if value not in [None, {}, []]:
                 output[k] = value
         return output
     
