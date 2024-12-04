@@ -4,34 +4,50 @@ from scim2.core import BaseSchema
 from scim2.base import Attribute, ResourceBase, ComplexBase
 from scim2.datatypes import *
 
-class TestBaseSchema:
-    """Tests for the BaseSchema class and generic functions"""
+# Objects for testing
+# Complex attribute for TestSchema
+class Car(ComplexBase):
+    make = Attribute(String)
+    model = Attribute(String)
+    year = Attribute(Integer)
+
+
+# Define a new schema that inherits from BaseSchema
+class TestSchema(BaseSchema):
+    class ScimInfo(BaseSchema.ScimInfo):
+        name = "TestSchema"
+    fruit = Attribute(String)
+    car = Attribute(Car)
+
+
+class TestDict:
+    """Tests dictonary conversion"""
 
     def test_from_dict(self):
-        """Test creating a BaseSchema object from a dictionary"""
+        """Test creating am object from a dictionary"""
         data = {
             "id": "test", 
             "externalId": "test2",
             "meta": {
-                "resourceType": "BaseObject",
+                "resourceType": "TestSchema",
                 "created": "2010-01-23T04:56:22Z",
                 "lastModified": "2010-01-23T04:56:22Z",
-                "location": "https://example.com/Users/test",
+                "location": "https://example.com/TestSchema/test",
                 "version": 'W/"3694e05e9dff594"'
             }
         }
-        user = BaseSchema(data)
+        user = TestSchema(data)
         assert user.id.value == "test"
         assert user.externalId.value == "test2"
-        assert user.meta.value.resourceType.value == "BaseObject"
+        assert user.meta.value.resourceType.value == "TestSchema"
         assert user.meta.value.created.value == datetime(2010, 1, 23, 4, 56, 22, tzinfo=timezone.utc)
         assert user.meta.value.lastModified.value == datetime(2010, 1, 23, 4, 56, 22, tzinfo=timezone.utc)
-        assert user.meta.value.location.value == "https://example.com/Users/test"
+        assert user.meta.value.location.value == "https://example.com/TestSchema/test"
         assert user.meta.value.version.value == 'W/"3694e05e9dff594"'
 
     def test_to_dict(self):
         """Test converting a BaseSchema object to a dictionary"""
-        user = BaseSchema()
+        user = TestSchema()
         user.id.value = "foo"
         user.externalId.value = "bar"
         user.meta.value.resourceType.value = "BaseObject"
@@ -39,17 +55,16 @@ class TestBaseSchema:
         user.meta.value.lastModified.value = datetime(2013, 1, 23, 4, 56, 22, tzinfo=timezone.utc)
         user.meta.value.location.value = "https://example.com/Users/test"
         user.meta.value.version.value = 'W/"3694e05e9eee594"'
-        assert user.dict() == {
-            "id": "foo",
-            "externalId": "bar",
-            "meta": {
-                "resourceType": BaseSchema._info_name,
-                "created": "2012-01-23T04:56:22+00:00",
-                "lastModified": "2013-01-23T04:56:22+00:00",
-                "location": "{basepath}/BaseSchema",
-                "version": 'W/"3694e05e9eee594"'
-            }
-        }
+        
+        result = user.dict()
+        assert result['id'] == "foo"
+        assert result['externalId'] == "bar"
+        # The input resource type is ignored it is readonly
+        assert result['meta']['resourceType'] == "TestSchema"
+        assert result['meta']['created'] == "2012-01-23T04:56:22+00:00"
+        assert result['meta']['lastModified'] == "2013-01-23T04:56:22+00:00"
+        assert result['meta']['location'] == "{basepath}/TestSchemas/foo"
+        assert result['meta']['version'] == 'W/"3694e05e9eee594"'
 
     def test_from_json(self):
         data = """{
@@ -73,10 +88,6 @@ class TestBaseSchema:
 class TestInheritence:
     """Test inheritance of BaseSchema"""
 
-    # Define a new schema that inherits from BaseSchema
-    class TestSchema(BaseSchema):
-        fruit = Attribute(String)
-
     def test_from_dict(self):
         """Test with attributes from both BaseSchema and TestSchema to check if inheritance works"""
         data = {
@@ -84,6 +95,16 @@ class TestInheritence:
             "fruit": "kiwi"
         }
 
-        o = self.TestSchema(data)
+        o = TestSchema(data)
         assert o.id.value == "inheritencTest"
         assert o.fruit.value == "kiwi"
+
+    def test_schema_representation(self):
+        """Test the schema representation of the TestSchema class"""
+        schema = TestSchema.get_schema()
+        assert schema['id'] == 'urn:ietf:params:scim:schemas:extension:2.0:TestSchema'
+        assert schema['name'] == TestSchema.ScimInfo.name
+        assert schema['description'] == TestSchema.ScimInfo.description
+        assert schema['meta']['resourceType'] == 'Schema'
+        assert schema['meta']['location'] == "{basepath}/Schemas/" + TestSchema.ScimInfo.schema
+        assert len(schema['attributes']) == 2

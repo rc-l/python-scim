@@ -13,7 +13,10 @@ class Attribute():
         self._type = value_type
         self.complex = issubclass(self._type, ResourceBase)
         if not self.multivalued:
-            self._value = [self._type()]
+            if self.complex:
+                self._value = [self._type()]
+            else:
+                self._value = [None]
         else:
             self._value = []
 
@@ -144,9 +147,11 @@ class ResourceBase():
         # TODO: why did I split this into separate methods for class and class instance?
         # Get attributes of superclass
         inherited_attrs = {}
-        for base in cls.__bases__:
-            if issubclass(base, ResourceBase):
-                inherited_attrs.update(base._class_schema_attrs())
+        if not shallow:
+            # Shallow determines if superclass attributes are required to be returned
+            for base in cls.__bases__:
+                if issubclass(base, ResourceBase):
+                    inherited_attrs.update(base._class_schema_attrs())
 
         # Get attributes of current class
         own_attrs = cls._filter_schema_attrs(vars(cls))
@@ -168,7 +173,7 @@ class ResourceBase():
         output = {}
         for k, v in self._schema_attrs.items():
             value = v.dict()
-            if value:
+            if value not in [None, {}]:
                 output[k] = value
         return output
     
@@ -200,7 +205,8 @@ class ResourceBase():
         RFC7643 section 7
         """
         attributes = []
-        for k, v in cls._class_schema_attrs().items():
+        # Do shallow collection of attributes since schema should only include attributes of the current class
+        for k, v in cls._class_schema_attrs(shallow=True).items():
             attrschema = v.get_schema()
             if not "name" in attrschema:
                 attrschema["name"] = k
@@ -209,6 +215,8 @@ class ResourceBase():
     
 class ComplexBase(ResourceBase):
     """Base class for complex attribute content"""
+    # Name of the data type RFC7643 section 2.3
+    name = "Complex"
     
     @classmethod
     def validate(cls, value):

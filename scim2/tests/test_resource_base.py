@@ -23,11 +23,12 @@ class TestResourceBase:
         assert userB.username.value != "userA"
 
     def test_attribute_assignment(self):
-        """Assign attributes in python code"""
+        """Assign attributes in python code.
+        Assigned attribute should be remembered and returned in dict"""
         # Pythonic attribute assignment
         user = self.User()
         user.username.value = "test"
-        assert user.dict() == {"username": "test"}
+        assert user.dict() == {'username': 'test', 'emails': []}
 
     def test_creation_from_dict(self):
         """Create a User object from a dictionary"""

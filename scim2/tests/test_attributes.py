@@ -25,6 +25,9 @@ class TestSingular:
         s.value = "test"
         assert s.dict() == "test"
 
+        x = Attribute(String)
+        assert x.dict() == None
+
     def test_instance_separation(self):
         """Test if two instances don't share a state"""
         s = Attribute(String)
@@ -109,6 +112,14 @@ class TestComplex:
         c.value.name.value = "apple"
         c.value.color.value = "red"
         assert c.dict() == {"name": "apple", "color": "red"}
+
+    def test_dict_empty(self):
+        """Test complex attribute whose subattributes are all empty
+        
+        Should return empty dictionary
+        """
+        c = Attribute(Fruit)
+        assert c.dict() == {}
 
     def test_instance_separation(self):
         """Test if two instances don't share a state"""
