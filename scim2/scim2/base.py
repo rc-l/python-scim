@@ -12,13 +12,7 @@ class Attribute():
         self.multivalued = kwargs.get("multivalued", False)
         self._type = value_type
         self.complex = issubclass(self._type, ResourceBase)
-        if not self.multivalued:
-            if self.complex:
-                self._value = [self._type()]
-            else:
-                self._value = [None]
-        else:
-            self._value = []
+        self.reset()
 
         # Remaining attribute properties
         self.description = kwargs.get("description", "")
@@ -38,7 +32,18 @@ class Attribute():
         if not issubclass(self._type, DataTypeBase) and not self.complex:
             raise TypeError("Must provde a valid data type (subclass of DataType or a Complex)")
 
+    def reset(self):
+        """Reset the attribute to its default value"""
+        if not self.multivalued:
+            if self.complex:
+                self._value = [self._type()]
+            else:
+                self._value = [None]
+        else:
+            self._value = []
+
     def dict(self):
+        """Return dictionary representation of the attribute"""
         if self.complex:
             # Cascade down to the attributes making up the complex attribute
             if self.multivalued:
@@ -52,6 +57,7 @@ class Attribute():
                 return self._type.prep_json(self._value[0])
     
     def load(self, value):
+        """Populate attribute values based of json or dictionary representation"""
         if self.complex:
             if self.multivalued:
                 if not isinstance(value, list):
@@ -62,9 +68,7 @@ class Attribute():
         else:
             self.value = value
 
-    # Not overriding __set__ and __get__ methods of the entire attribute
-    # because this creates conflicts full replacement of the attribute in parent level
-    # hence the use of value, like User.username.value = "John" instead of User.username = "John" 
+    # Get and set for the value of the attribute
     @property
     def value(self):
         if not self.multivalued:
@@ -168,6 +172,40 @@ class ResourceBase():
                 output[k] = v
         return output
 
+    def __str__(self):
+        return str(self.dict())
+    
+    # Overide the getattribute, setattr and delattr methods to handle the attributes
+    # This is done to make the attributes accessible as if they were normal attributes
+    # instead of getting the Attribute object you now get the value of the attribute
+    def __getattribute__(self, name):
+        attr = super().__getattribute__(name)
+        if isinstance(attr, Attribute):
+            return attr.value
+        return attr
+    
+    def __setattr__(self, name, value):
+        attr = super().__getattribute__(name)
+        # If the attribute is an Attribute object, set the value of the attribute
+        # Exception is if the value is an Attribute object as well. Then the new
+        # attribute object replaces the old one. This is required during initialization
+        # of the Resource object.
+        if isinstance(attr, Attribute) and not isinstance(value, Attribute):
+            attr.value = value
+        else:
+            super().__setattr__(name, value)
+        
+    def __delattr__(self, name):
+        attr = super().__getattribute__(name)
+        if isinstance(attr, Attribute):
+            attr.reset()
+        else:
+            super().__delattr__(name)
+
+    def get_attribute(self, name):
+        """Returns the attribute object not the value"""
+        return super().__getattribute__(name)
+
     def dict(self):
         """Return dictionary representation of the resource"""
         output = {}
@@ -177,9 +215,6 @@ class ResourceBase():
             if value not in [None, {}, []]:
                 output[k] = value
         return output
-    
-    def __str__(self):
-        return str(self.dict())
 
     def load(self, repr):
         """Populate attribute values based of json or dictionary representation"""
