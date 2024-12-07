@@ -37,24 +37,24 @@ class TestDict:
             }
         }
         user = TestSchema(data)
-        assert user.id.value == "test"
-        assert user.externalId.value == "test2"
-        assert user.meta.value.resourceType.value == "TestSchema"
-        assert user.meta.value.created.value == datetime(2010, 1, 23, 4, 56, 22, tzinfo=timezone.utc)
-        assert user.meta.value.lastModified.value == datetime(2010, 1, 23, 4, 56, 22, tzinfo=timezone.utc)
-        assert user.meta.value.location.value == "https://example.com/TestSchema/test"
-        assert user.meta.value.version.value == 'W/"3694e05e9dff594"'
+        assert user.id == "test"
+        assert user.externalId == "test2"
+        assert user.meta.resourceType == "TestSchema"
+        assert user.meta.created == datetime(2010, 1, 23, 4, 56, 22, tzinfo=timezone.utc)
+        assert user.meta.lastModified == datetime(2010, 1, 23, 4, 56, 22, tzinfo=timezone.utc)
+        assert user.meta.location == "https://example.com/TestSchema/test"
+        assert user.meta.version == 'W/"3694e05e9dff594"'
 
     def test_to_dict(self):
         """Test converting a BaseSchema object to a dictionary"""
         user = TestSchema()
-        user.id.value = "foo"
-        user.externalId.value = "bar"
-        user.meta.value.resourceType.value = "BaseObject"
-        user.meta.value.created.value = datetime(2012, 1, 23, 4, 56, 22, tzinfo=timezone.utc)
-        user.meta.value.lastModified.value = datetime(2013, 1, 23, 4, 56, 22, tzinfo=timezone.utc)
-        user.meta.value.location.value = "https://example.com/Users/test"
-        user.meta.value.version.value = 'W/"3694e05e9eee594"'
+        user.id = "foo"
+        user.externalId = "bar"
+        user.meta.resourceType = "BaseObject"
+        user.meta.created = datetime(2012, 1, 23, 4, 56, 22, tzinfo=timezone.utc)
+        user.meta.lastModified = datetime(2013, 1, 23, 4, 56, 22, tzinfo=timezone.utc)
+        user.meta.location = "https://example.com/Users/test"
+        user.meta.version = 'W/"3694e05e9eee594"'
         
         result = user.dict()
         assert result['id'] == "foo"
@@ -78,12 +78,12 @@ class TestDict:
             }
         }"""
         user = BaseSchema(data)
-        assert user.id.value == "test"
-        assert user.externalId.value == "foo456"
-        assert user.meta.value.resourceType.value == "BaseObject"
-        assert user.meta.value.created.value == datetime(2015, 6, 9, 4, 56, 22, tzinfo=timezone.utc)
-        assert user.meta.value.lastModified.value == datetime(2015, 6, 9, 5, 56, 22, tzinfo=timezone.utc)
-        assert user.meta.value.location.value == "https://example.com/Users/test"
+        assert user.id == "test"
+        assert user.externalId == "foo456"
+        assert user.meta.resourceType == "BaseObject"
+        assert user.meta.created == datetime(2015, 6, 9, 4, 56, 22, tzinfo=timezone.utc)
+        assert user.meta.lastModified == datetime(2015, 6, 9, 5, 56, 22, tzinfo=timezone.utc)
+        assert user.meta.location == "https://example.com/Users/test"
 
 class TestInheritence:
     """Test inheritance of BaseSchema"""
@@ -96,8 +96,8 @@ class TestInheritence:
         }
 
         o = TestSchema(data)
-        assert o.id.value == "inheritencTest"
-        assert o.fruit.value == "kiwi"
+        assert o.id == "inheritencTest"
+        assert o.fruit == "kiwi"
 
     def test_schema_representation(self):
         """Test the schema representation of the TestSchema class"""

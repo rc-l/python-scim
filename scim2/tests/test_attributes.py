@@ -101,16 +101,18 @@ class TestComplex:
     def test_value(self):
         """Test setting and getting value"""
         c = Attribute(Fruit)
-        c.value.name.value = "apple"
-        c.value.color.value = "red"
-        assert c.value.name.value == "apple"
-        assert c.value.color.value == "red"
+        # Need to go through c.value to access the complex class inside the attribute object
+        # Normally this step would be done throug the parent Resource class
+        c.value.name = "apple"
+        c.value.color = "red"
+        assert c.value.name == "apple"
+        assert c.value.color == "red"
 
     def test_dict(self):
         """Test dict method"""
         c = Attribute(Fruit)
-        c.value.name.value = "apple"
-        c.value.color.value = "red"
+        c.value.name = "apple"
+        c.value.color = "red"
         assert c.dict() == {"name": "apple", "color": "red"}
 
     def test_dict_empty(self):
@@ -124,32 +126,32 @@ class TestComplex:
     def test_instance_separation(self):
         """Test if two instances don't share a state"""
         c = Attribute(Fruit)
-        c.value.name.value = "apple"
-        c.value.color.value = "red"
-        assert Fruit.name.value != "apple"
-        assert Fruit.color.value != "red"
+        c.value.name = "apple"
+        c.value.color = "red"
+        assert Fruit.name != "apple"
+        assert Fruit.color != "red"
 
         a = Attribute(Fruit)
-        a.value.name.value = "banana"
-        a.value.color.value = "yellow"
-        assert a.value.name.value == "banana"
-        assert a.value.color.value == "yellow"
-        assert c.value.name.value == "apple"
-        assert c.value.color.value == "red"
+        a.value.name = "banana"
+        a.value.color = "yellow"
+        assert a.value.name == "banana"
+        assert a.value.color == "yellow"
+        assert c.value.name == "apple"
+        assert c.value.color == "red"
 
     def test_str(self):
         """Test str method"""
         c = Attribute(Fruit)
-        c.value.name.value = "apple"
-        c.value.color.value = "red"
+        c.value.name = "apple"
+        c.value.color = "red"
         assert str(c) == '{"name": "apple", "color": "red"}'
 
     def test_load(self):
         """Test load method"""
         c = Attribute(Fruit)
         c.load({"name": "apple", "color": "red"})
-        assert c.value.name.value == "apple"
-        assert c.value.color.value == "red"
+        assert c.value.name == "apple"
+        assert c.value.color == "red"
 
 class TestComplexMultiValue:
     """Tests for multivalue attribute with complex type"""
@@ -157,25 +159,25 @@ class TestComplexMultiValue:
         """Test setting and getting value"""
         c = Attribute(Fruit, multivalued=True)
         c.value = [Fruit().load({"name": "apple", "color": "red"})]
-        assert c.value[0].name.value == "apple"
-        assert c.value[0].color.value == "red"
+        assert c.value[0].name == "apple"
+        assert c.value[0].color == "red"
 
     def test_append(self):
         """Test adding to list"""
         c = Attribute(Fruit, multivalued=True)
         c.value.append(Fruit().load({"name": "apple", "color": "red"}))
         c.value.append(Fruit().load({"name": "banana", "color": "yellow"}))
-        assert c.value[0].name.value == "apple"
-        assert c.value[0].color.value == "red"
-        assert c.value[1].name.value == "banana"
-        assert c.value[1].color.value == "yellow"
+        assert c.value[0].name == "apple"
+        assert c.value[0].color == "red"
+        assert c.value[1].name == "banana"
+        assert c.value[1].color == "yellow"
 
     def test_dict(self):
         """Test dict method"""
         c = Attribute(Fruit, multivalued=True)
         f1 = Fruit()
-        f1.name.value = "apple"
-        f1.color.value = "red"
+        f1.name = "apple"
+        f1.color = "red"
         c.value = [f1]
         assert c.dict() == [{"name": "apple", "color": "red"}]
 
@@ -183,15 +185,15 @@ class TestComplexMultiValue:
         """Test if two instances don't share a state"""	
         c = Attribute(Fruit, multivalued=True)
         c.value = [Fruit().load({"name": "apple", "color": "red"})]
-        assert Fruit.name.value != "apple"
-        assert Fruit.color.value != "red"
+        assert Fruit.name != "apple"
+        assert Fruit.color != "red"
 
         a = Attribute(Fruit, multivalued=True)
         a.value = [Fruit().load({"name": "banana", "color": "yellow"})]
-        assert a.value[0].name.value == "banana"
-        assert a.value[0].color.value == "yellow"
-        assert c.value[0].name.value == "apple"
-        assert c.value[0].color.value == "red"
+        assert a.value[0].name == "banana"
+        assert a.value[0].color == "yellow"
+        assert c.value[0].name == "apple"
+        assert c.value[0].color == "red"
 
     def test_str(self):
         """Test str method"""
@@ -203,7 +205,7 @@ class TestComplexMultiValue:
         """Test load method"""	
         c = Attribute(Fruit, multivalued=True)
         c.load([{"name": "apple", "color": "red"}, {"name": "banana", "color": "yellow"}])
-        assert c.value[0].name.value == "apple"
-        assert c.value[0].color.value == "red"
-        assert c.value[1].name.value == "banana"
-        assert c.value[1].color.value == "yellow"
+        assert c.value[0].name == "apple"
+        assert c.value[0].color == "red"
+        assert c.value[1].name == "banana"
+        assert c.value[1].color == "yellow"
