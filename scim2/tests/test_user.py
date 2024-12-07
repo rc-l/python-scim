@@ -9,10 +9,10 @@ def test_minimal_to_dict():
     """User defined in code to dictonary representation
     See section 8.1 in RFC7643"""
     user = User()
-    user.id.value = "2819c223-7f76-453a-919d-413861904646"
-    user.userName.value = "bjensen@example.com"
-    user.meta.value.created.value = datetime(2010, 1, 23, 4, 56, 22, tzinfo=timezone.utc)
-    user.meta.value.lastModified.value = datetime(2011, 5, 13, 4, 42, 34, tzinfo=timezone.utc)
+    user.id = "2819c223-7f76-453a-919d-413861904646"
+    user.userName = "bjensen@example.com"
+    user.meta.created = datetime(2010, 1, 23, 4, 56, 22, tzinfo=timezone.utc)
+    user.meta.lastModified = datetime(2011, 5, 13, 4, 42, 34, tzinfo=timezone.utc)
     # Leave out version number, escaping doesn't work well
 
     result = user.dict()
@@ -50,11 +50,11 @@ def test_minimal_from_json():
         }
     """
     user = User(data)
-    assert user.id.value == "2819c223-7f76-453a-919d-413861904646"
-    assert user.userName.value == "bjensen@example.com"
-    assert user.meta.value.resourceType.value == "User"
-    assert user.meta.value.created.value == datetime(2010, 1, 23, 4, 56, 22, tzinfo=timezone.utc)
-    assert user.meta.value.lastModified.value == datetime(2011, 5, 13, 4, 42, 34, tzinfo=timezone.utc)
+    assert user.id == "2819c223-7f76-453a-919d-413861904646"
+    assert user.userName == "bjensen@example.com"
+    assert user.meta.resourceType == "User"
+    assert user.meta.created == datetime(2010, 1, 23, 4, 56, 22, tzinfo=timezone.utc)
+    assert user.meta.lastModified == datetime(2011, 5, 13, 4, 42, 34, tzinfo=timezone.utc)
     # Ignoring location since this is generated on dictionary creation
 
 def test_resource_type_representation():
