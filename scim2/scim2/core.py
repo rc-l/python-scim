@@ -18,7 +18,7 @@ class MetaData(ComplexBase):
     version = Attribute(String)
 
 class BaseSchema(ResourceBase):
-    """Base class for schema objects"""
+    """Base class for schema objects. The root object for a SCIM resource"""
 
     id = Attribute(String, required=True)
     externalId = Attribute(String)
@@ -43,6 +43,7 @@ class BaseSchema(ResourceBase):
         super_dict['meta']["location"] = "{basepath}" + self.ScimInfo.endpoint + "/" + super_dict['id']
         return super_dict
     
+    # TODO: remove or replace this function. Not applicable with new Extension method
     @classmethod
     def list_schemas(cls):
         """List the schemas for the ResourceType

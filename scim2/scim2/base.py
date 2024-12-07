@@ -123,7 +123,7 @@ class Attribute():
         
 
 class ResourceBase():
-    """Base class for SCIM resources which form the root of a SCIM object"""
+    """Base class SCIM objects Resource, Extension, Complex"""
 
     def __init__(self, scim_repr=None):        
         # Copy all the SCIM object such that two instances don't share the same attributes
@@ -268,3 +268,14 @@ class ComplexBase(ResourceBase):
             return cls(value)
         else:
             raise ValueError("Cannot convert value to complex attribute")
+        
+# Extension class
+# To handle SCIM extensions
+# Needs to be able to generate a schema
+# Does not have it's own endpoint
+# Does not need to have a ResourceType definition
+class ExtensionBase(ResourceBase):
+    """Base class for SCIM extensions"""
+
+    def get_schema(self):
+        attributes = super().get_schema()
