@@ -30,6 +30,17 @@ class TestResourceBase:
         user.username = "test"
         assert user.dict() == {'username': 'test'}
 
+    def test_attribute_delete(self):
+        """Delete an attribute value"""
+        user = self.User()
+        user.username = "test"
+        assert user.dict() == {'username': 'test'}
+        del user.username
+        assert user.dict() == {}
+        # Do this extra check to ensure the Attribute object is still there
+        assert user.get_attribute('username').value is None
+    
+
     def test_creation_from_dict(self):
         """Create a User object from a dictionary"""
         user = self.User({"username": "test", "emails": ["user@example.com", "admin@something.com"]})
