@@ -1,7 +1,7 @@
-from scim2.base import Attribute, Base, ComplexBase
+from scim2.base import Attribute, Complex
 from scim2.datatypes import String, Integer
 
-class Fruit(ComplexBase):
+class Fruit(Complex):
     """Class for testing Complex attribute"""
     name = Attribute(String)
     color = Attribute(String)

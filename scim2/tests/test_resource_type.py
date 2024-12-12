@@ -1,20 +1,19 @@
 from datetime import datetime, timezone
 
-from scim2.core import ResourceTypeBase
-from scim2.base import Attribute, Base, ComplexBase, Extension
+from scim2.base import Attribute, Complex, Extension, ResourceType
 from scim2.datatypes import *
 
 # Objects for testing
 # Complex attribute for TestSchema
-class Car(ComplexBase):
+class Car(Complex):
     make = Attribute(String)
     model = Attribute(String)
     year = Attribute(Integer)
 
 
-# Define a new schema that inherits from ResourceTypeBase
-class TestSchema(ResourceTypeBase):
-    class ScimInfo(ResourceTypeBase.ScimInfo):
+# Define a new schema that inherits from ResourceType
+class TestSchema(ResourceType):
+    class ScimInfo(ResourceType.ScimInfo):
         name = "TestSchema"
     fruit = Attribute(String)
     car = Attribute(Car)
@@ -46,7 +45,7 @@ class TestDict:
         assert user.meta.version == 'W/"3694e05e9dff594"'
 
     def test_to_dict(self):
-        """Test converting a ResourceTypeBase object to a dictionary"""
+        """Test converting a ResourceType object to a dictionary"""
         user = TestSchema()
         user.id = "foo"
         user.externalId = "bar"
@@ -77,7 +76,7 @@ class TestDict:
                 "location": "https://example.com/Users/test"
             }
         }"""
-        user = ResourceTypeBase(data)
+        user = ResourceType(data)
         assert user.id == "test"
         assert user.externalId == "foo456"
         assert user.meta.resourceType == "BaseObject"
@@ -86,7 +85,7 @@ class TestDict:
         assert user.meta.location == "https://example.com/Users/test"
 
 class TestExtension:
-    """Test incorporating extensions into a ResourceTypeBase subclassess
+    """Test incorporating extensions into a ResourceType subclassess
     
     Extensions are assigned to the class after the class is defined.
     """
@@ -101,7 +100,7 @@ class TestExtension:
     TestSchema.some_ext = MyExtension
 
     def test_instantiation(self):
-        """Test if both the ResourceTypeBase and Extension classes are instantiated
+        """Test if both the ResourceType and Extension classes are instantiated
         
         Extension instance should be separate from the class to prevent attribute sharing between instances.
         """
@@ -180,10 +179,10 @@ class TestExtension:
         assert self.MyExtension.ScimInfo.schema not in result
 
 class TestInheritence:
-    """Test inheritance of ResourceTypeBase"""
+    """Test inheritance of ResourceType"""
 
     def test_from_dict(self):
-        """Test with attributes from both ResourceTypeBase and TestSchema to check if inheritance works"""
+        """Test with attributes from both ResourceType and TestSchema to check if inheritance works"""
         data = {
             "id": "inheritencTest",
             "fruit": "kiwi"

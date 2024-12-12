@@ -1,6 +1,5 @@
 # Test for default user class
 
-from copy import deepcopy
 from datetime import datetime, timezone
 import json
 

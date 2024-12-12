@@ -1,7 +1,8 @@
 from copy import deepcopy
 import json
 
-from .datatypes import DataTypeBase, String
+from .datatypes import DataTypeBase
+from .datatypes import *
 from .helpers import classproperty
 
 class Attribute():
@@ -255,8 +256,9 @@ class Base():
                 attrschema["name"] = k
             attributes.append(attrschema)
         return attributes
-    
-class ComplexBase(Base):
+
+   
+class Complex(Base):
     """Base class for complex attribute content"""
     # Name of the data type RFC7643 section 2.3
     name = "Complex"
@@ -275,6 +277,7 @@ class ComplexBase(Base):
             return cls(value)
         else:
             raise ValueError("Cannot convert value to complex attribute")
+
 
 class ResourceBase(Base):
     """Base class for SCIM Resources and Extensions"""
@@ -317,6 +320,7 @@ class ResourceBase(Base):
         }
         return schema
 
+
 class Extension(ResourceBase):
     """Base class for SCIM extensions"""
 
@@ -331,3 +335,118 @@ class Extension(ResourceBase):
         description = ""
 
 
+class MetaData(Complex):
+    """Metadata for a resource"""
+    
+    resourceType = Attribute(String, mutability="readOnly", caseExact=True)
+    created = Attribute(DateTime)
+    lastModified = Attribute(DateTime)
+    location = Attribute(String)
+    version = Attribute(String)
+
+
+class ResourceType(ResourceBase):
+    """Base class for SCIM Resource Types which form the root resources of the SCIM API"""
+
+    id = Attribute(String, required=True)
+    externalId = Attribute(String)
+    meta = Attribute(MetaData)
+
+    class ScimInfo(ResourceBase.ScimInfo):
+        # Note on naming this class, did not pick Metadata, or Schema or variants
+        # thereof since these are already keys in the SCIM schema representation
+        """Metadata for the SCIM object"""
+
+        # Left name undefined on purpose, should be overridden by subclasses
+        endpoint = classproperty(lambda cls: "/" + cls.name + "s")
+        schema = classproperty(lambda cls: f'urn:ietf:params:scim:schemas:custom:2.0:{cls.name}')
+
+    def __init__(self, *args, **kwargs):
+        # Instatiate extensions
+        for k, v in self.extensions:
+            setattr(self, k, v())
+
+        super().__init__(*args, **kwargs)
+
+    def dict(self):
+        """Convert the object to a dictionary"""
+        super_dict = super().dict()
+
+        # Add metadata
+        super_dict['schemas'] = [self.ScimInfo.schema] + self.extension_schemas
+        if "meta" not in super_dict:
+            super_dict['meta'] = {}
+        super_dict['meta']["resourceType"] = self.ScimInfo.name
+        super_dict['meta']["location"] = "{basepath}" + self.ScimInfo.endpoint + "/" + super_dict['id']
+
+        # Add extensions
+        for k, v in self.extensions:
+            # Get the dict of the instantiated extension object 
+            # Going for v directly would get use the uninstantiated class
+            extension_dict = self.__getattribute__(k).dict()
+
+            # Add the dict to the super_dict
+            # This needs to be in it's own namespace based on the schema name according to the SCIM spec
+            if extension_dict:
+                super_dict[v.ScimInfo.schema] = extension_dict
+        return super_dict
+    
+    def load(self, repr):
+        # Do normal load first, this changes the state of self
+        super().load(repr)
+        extension_key_mapping = {v.ScimInfo.schema: k for k, v in self.extensions}
+
+        # Load extensions
+        if self._original_repr:
+            # Loop over all the keys in the original representation
+            for k, v in self._original_repr.items():
+                # Check if the key is an extension
+                if k in extension_key_mapping:
+                    # Get the extension key
+                    extension_key = extension_key_mapping[k]
+                    # Load the extension
+                    self.__getattribute__(extension_key).load(v)
+
+    @classmethod
+    def resource_type_representation(cls):
+        """Generate a resource type representation.
+
+        According to RFC7643 section 6 and in support of RFC7644 section 4."""
+        output = dict()
+        output['schemas'] = ["urn:ietf:params:scim:schemas:core:2.0:ResourceType"]
+        output['meta'] = {}
+        output['meta']['resourceType'] = "ResourceType"
+        output['meta']['location'] = "{basepath}/ResourceTypes/" + cls.ScimInfo.name
+        output['endpoint'] = cls.ScimInfo.endpoint
+        output['schema'] = cls.ScimInfo.schema
+        output['name'] = cls.ScimInfo.name
+        output['id'] = cls.ScimInfo.id
+
+        # Description optional
+        try:
+            output['description'] = cls.ScimInfo.description
+        except AttributeError:
+            output['description'] = ""
+
+        # Schema extensions
+        # All the schemas that extend this schema
+        output['schemaExtensions'] = [
+            {
+                "schema": e,
+                "required": False
+            } 
+            for e in cls.extension_schemas
+        ]
+
+        return output
+
+    @classproperty
+    def extensions(cls):
+        """List all the extensions for the resource type"""
+        # Get all variables in class and filter for the ones that are subclasses of Extension
+        return [(k, v) for k, v in vars(cls).items() if type(v) is type and issubclass(v, Extension)]
+    
+    @classproperty
+    def extension_schemas(cls):
+        """List all the extension schemas for the resource type"""
+        return [v.ScimInfo.schema for k, v in cls.extensions]
