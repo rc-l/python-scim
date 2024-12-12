@@ -299,14 +299,8 @@ class ResourceBase(Base):
         
         RFC7643 section 7
         """
-        # TODO: deduplicate this method with the one in Base
-        attributes = []
-        # Do shallow collection of attributes since schema should only include attributes of the current class
-        for k, v in cls._class_schema_attrs(shallow=True).items():
-            attrschema = v.get_schema()
-            if not "name" in attrschema:
-                attrschema["name"] = k
-            attributes.append(attrschema)
+        # Collect attributes
+        attributes = super().get_schema()
 
         schema = {
             "id": cls.ScimInfo.schema,
