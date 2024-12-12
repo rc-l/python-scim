@@ -93,3 +93,11 @@ class TestDateTime:
         with pytest.raises(TypeError):
             DateTime.convert(1)
 
+    def test_prep_json(self):
+        """Test if the returned dict is empty if the value is None"""
+        # Test with value set
+        assert DateTime.prep_json(datetime.now()) == datetime.now().isoformat()
+        # Test without value set
+        assert DateTime.prep_json(None) == None
+
+

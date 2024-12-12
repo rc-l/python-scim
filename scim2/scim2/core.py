@@ -1,12 +1,6 @@
-from .base import Attribute, ResourceBase, ComplexBase
+from .base import Attribute, Base, ComplexBase, ResourceBase, Extension
 from .datatypes import *
-from .helpers import inheritors
-
-class classproperty:
-    def __init__(self, func):
-        self.fget = func
-    def __get__(self, instance, owner):
-        return self.fget(owner)
+from .helpers import inheritors, classproperty
 
 class MetaData(ComplexBase):
     """Metadata for a resource"""
@@ -17,76 +11,68 @@ class MetaData(ComplexBase):
     location = Attribute(String)
     version = Attribute(String)
 
-class BaseSchema(ResourceBase):
-    """Base class for schema objects. The root object for a SCIM resource"""
+class ResourceTypeBase(ResourceBase):
+    """Base class for SCIM Resource Types which form the root resources of the SCIM API"""
 
     id = Attribute(String, required=True)
     externalId = Attribute(String)
     meta = Attribute(MetaData)
 
-    class ScimInfo:
+    class ScimInfo(ResourceBase.ScimInfo):
         # Note on naming this class, did not pick Metadata, or Schema or variants
         # thereof since these are already keys in the SCIM schema representation
         """Metadata for the SCIM object"""
 
         # Left name undefined on purpose, should be overridden by subclasses
         endpoint = classproperty(lambda cls: "/" + cls.name + "s")
-        schema = classproperty(lambda cls: f'urn:ietf:params:scim:schemas:extension:2.0:{cls.name}')
-        id = classproperty(lambda cls: cls.name)
-        description = ""
+        schema = classproperty(lambda cls: f'urn:ietf:params:scim:schemas:custom:2.0:{cls.name}')
+
+    def __init__(self, *args, **kwargs):
+        # Instatiate extensions
+        for k, v in self.extensions:
+            setattr(self, k, v())
+
+        super().__init__(*args, **kwargs)
 
     def dict(self):
         """Convert the object to a dictionary"""
         super_dict = super().dict()
-        super_dict['schemas'] = self.list_schemas()
+
+        # Add metadata
+        super_dict['schemas'] = [self.ScimInfo.schema] + self.extension_schemas
+        if "meta" not in super_dict:
+            super_dict['meta'] = {}
         super_dict['meta']["resourceType"] = self.ScimInfo.name
         super_dict['meta']["location"] = "{basepath}" + self.ScimInfo.endpoint + "/" + super_dict['id']
+
+        # Add extensions
+        for k, v in self.extensions:
+            # Get the dict of the instantiated extension object 
+            # Going for v directly would get use the uninstantiated class
+            extension_dict = self.__getattribute__(k).dict()
+
+            # Add the dict to the super_dict
+            # This needs to be in it's own namespace based on the schema name according to the SCIM spec
+            if extension_dict:
+                super_dict[v.ScimInfo.schema] = extension_dict
         return super_dict
     
-    # TODO: remove or replace this function. Not applicable with new Extension method
-    @classmethod
-    def list_schemas(cls):
-        """List the schemas for the ResourceType
-        
-        This list includes the schemas that this resource extends through inheritence
-        """
-        schemas = [cls.ScimInfo.schema]
-        for base in cls.__bases__:
-            # Get the schema from other resource schema classes but not from BaseSchema
-            if issubclass(base, BaseSchema) and base != BaseSchema:
-                schemas.extend(base.list_schemas())
-        # Remove duplicates
-        schemas = list(set(schemas))
-        return schemas
+    def load(self, repr):
+        # Do normal load first, this changes the state of self
+        super().load(repr)
+        extension_key_mapping = {v.ScimInfo.schema: k for k, v in self.extensions}
 
-    @classmethod
-    def get_schema(cls):
-        """Get the schema representation for the class
-        The resource object only needs to get the attributes. Other properties are already
-        known by parent.
-        
-        RFC7643 section 7
-        """
-        attributes = []
-        # Do shallow collection of attributes since schema should only include attributes of the current class
-        for k, v in cls._class_schema_attrs(shallow=True).items():
-            attrschema = v.get_schema()
-            if not "name" in attrschema:
-                attrschema["name"] = k
-            attributes.append(attrschema)
+        # Load extensions
+        if self._original_repr:
+            # Loop over all the keys in the original representation
+            for k, v in self._original_repr.items():
+                # Check if the key is an extension
+                if k in extension_key_mapping:
+                    # Get the extension key
+                    extension_key = extension_key_mapping[k]
+                    # Load the extension
+                    self.__getattribute__(extension_key).load(v)
 
-        schema = {
-            "id": cls.ScimInfo.schema,
-            "name": cls.ScimInfo.name,
-            "description": cls.ScimInfo.description,
-            "attributes": attributes,
-            "meta": {
-                "resourceType": "Schema",
-                "location": "{basepath}/Schemas/" + cls.ScimInfo.schema
-            }
-        }
-        return schema
-    
     @classmethod
     def resource_type_representation(cls):
         """Generate a resource type representation.
@@ -110,17 +96,26 @@ class BaseSchema(ResourceBase):
 
         # Schema extensions
         # All the schemas that extend this schema
-        subclasses = inheritors(cls)
         output['schemaExtensions'] = [
             {
-                "schema": s.ScimInfo.schema,
+                "schema": e,
                 "required": False
             } 
-            for s in subclasses if hasattr(s, 'ScimInfo')
+            for e in cls.extension_schemas
         ]
 
         return output
 
+    @classproperty
+    def extensions(cls):
+        """List all the extensions for the resource type"""
+        # Get all variables in class and filter for the ones that are subclasses of Extension
+        return [(k, v) for k, v in vars(cls).items() if type(v) is type and issubclass(v, Extension)]
+    
+    @classproperty
+    def extension_schemas(cls):
+        """List all the extension schemas for the resource type"""
+        return [v.ScimInfo.schema for k, v in cls.extensions]
 
 class Name(ComplexBase):
     """Complex attribute for the name of a user"""
@@ -153,9 +148,9 @@ class MultiValueReference(ComplexBase):
     ref = Attribute(Reference, name="$ref", mutability="readOnly", description="URI of the reference resource")
 
 
-class User(BaseSchema):
+class User(ResourceTypeBase):
 
-    class ScimInfo(BaseSchema.ScimInfo):
+    class ScimInfo(ResourceTypeBase.ScimInfo):
         name = "User"
         description = "User Account"
         schema = "urn:ietf:params:scim:schemas:core:2.0:User"
@@ -191,7 +186,7 @@ class Manager(ComplexBase):
     ref = Attribute(Reference, name="$ref", mutability="readOnly", description="The URI of the SCIM resource representing the user's manager.")
 
 
-class EnterpriseUser(User):
+class EnterpriseUser(Extension):
 
     class ScimInfo(User.ScimInfo):
         name = "EnterpriseUser"
@@ -204,3 +199,7 @@ class EnterpriseUser(User):
     division = Attribute(String, description="Identifies the name of a division.")
     department = Attribute(String, description="Identifies the name of a department.")
     manager = Attribute(Manager, description="The user's manager. A complex type that optionally allows service providers to represent organizational hierarchy by referencing the 'id' attribute of another User.")
+
+
+# Add EnterpriseUser extension to User
+User.enterpriseUser = EnterpriseUser

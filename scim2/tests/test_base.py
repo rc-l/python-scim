@@ -1,9 +1,9 @@
-from scim2.base import Attribute, ResourceBase
+from scim2.base import Attribute, Base
 from scim2.datatypes import String
 
-class TestResourceBase:
+class TestBase:
 # Create user here for testing so it will not be affected by changed in the core user
-    class User(ResourceBase):
+    class User(Base):
         username = Attribute(String)
         emails = Attribute(String, multivalued=True)
 

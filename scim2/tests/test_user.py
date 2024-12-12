@@ -1,5 +1,6 @@
 # Test for default user class
 
+from copy import deepcopy
 from datetime import datetime, timezone
 import json
 
@@ -8,6 +9,7 @@ from scim2.core import User
 def test_minimal_to_dict():
     """User defined in code to dictonary representation
     See section 8.1 in RFC7643"""
+
     user = User()
     user.id = "2819c223-7f76-453a-919d-413861904646"
     user.userName = "bjensen@example.com"
@@ -18,8 +20,9 @@ def test_minimal_to_dict():
     result = user.dict()
     result['meta']['location'] = result['meta']['location'].format(basepath="https://example.com/v2")
 
+    # Schemas is not the same as in RFC. Since the Enterprise extension is already in place
     assert result == {
-        "schemas": ["urn:ietf:params:scim:schemas:core:2.0:User"],
+        "schemas": ["urn:ietf:params:scim:schemas:core:2.0:User", "urn:ietf:params:scim:schemas:extension:enterprise:2.0:User"],
         "id": "2819c223-7f76-453a-919d-413861904646",
         "userName": "bjensen@example.com",
         "meta": {

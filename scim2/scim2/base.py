@@ -2,6 +2,7 @@ from copy import deepcopy
 import json
 
 from .datatypes import DataTypeBase, String
+from .helpers import classproperty
 
 class Attribute():
     """Base class for all attributes
@@ -11,7 +12,7 @@ class Attribute():
     def __init__(self, value_type, **kwargs):
         self.multivalued = kwargs.get("multivalued", False)
         self._type = value_type
-        self.complex = issubclass(self._type, ResourceBase)
+        self.complex = issubclass(self._type, Base)
         self.reset()
 
         # Remaining attribute properties
@@ -122,10 +123,12 @@ class Attribute():
         return schema
         
 
-class ResourceBase():
+class Base():
     """Base class SCIM objects Resource, Extension, Complex"""
 
-    def __init__(self, scim_repr=None):        
+    def __init__(self, scim_repr=None):
+        self._original_repr = None
+
         # Copy all the SCIM object such that two instances don't share the same attributes
         # Without copying a change in object_a will reflect also in object_b. Highly undesirable!
         for k, v in self._class_schema_attrs().items():
@@ -154,7 +157,7 @@ class ResourceBase():
         if not shallow:
             # Shallow determines if superclass attributes are required to be returned
             for base in cls.__bases__:
-                if issubclass(base, ResourceBase):
+                if issubclass(base, Base):
                     inherited_attrs.update(base._class_schema_attrs())
 
         # Get attributes of current class
@@ -185,7 +188,10 @@ class ResourceBase():
         return attr
     
     def __setattr__(self, name, value):
-        attr = super().__getattribute__(name)
+        try:
+            attr = super().__getattribute__(name)
+        except AttributeError:
+            attr = None
         # If the attribute is an Attribute object, set the value of the attribute
         # Exception is if the value is an Attribute object as well. Then the new
         # attribute object replaces the old one. This is required during initialization
@@ -230,6 +236,7 @@ class ResourceBase():
             for k, v in repr.items():
                 if k in self._schema_attrs:
                     self._schema_attrs[k].load(v)
+            self._original_repr = repr
         return self
 
     @classmethod
@@ -249,7 +256,7 @@ class ResourceBase():
             attributes.append(attrschema)
         return attributes
     
-class ComplexBase(ResourceBase):
+class ComplexBase(Base):
     """Base class for complex attribute content"""
     # Name of the data type RFC7643 section 2.3
     name = "Complex"
@@ -268,14 +275,59 @@ class ComplexBase(ResourceBase):
             return cls(value)
         else:
             raise ValueError("Cannot convert value to complex attribute")
+
+class ResourceBase(Base):
+    """Base class for SCIM Resources and Extensions"""
+
+    class ScimInfo:
+        # Note on naming this class, did not pick Metadata, or Schema or variants
+        # thereof since these are already keys in the SCIM schema representation
+        """Metadata for the SCIM object"""
+
+        # Left name undefined on purpose, should be overridden by subclasses
+        id = classproperty(lambda cls: cls.name)
+        description = ""
+
+    @classmethod
+    def get_schema(cls):
+        """Get the schema representation for the class
+        The resource object only needs to get the attributes. Other properties are already
+        known by parent.
         
-# Extension class
-# To handle SCIM extensions
-# Needs to be able to generate a schema
-# Does not have it's own endpoint
-# Does not need to have a ResourceType definition
-class ExtensionBase(ResourceBase):
+        RFC7643 section 7
+        """
+        # TODO: deduplicate this method with the one in Base
+        attributes = []
+        # Do shallow collection of attributes since schema should only include attributes of the current class
+        for k, v in cls._class_schema_attrs(shallow=True).items():
+            attrschema = v.get_schema()
+            if not "name" in attrschema:
+                attrschema["name"] = k
+            attributes.append(attrschema)
+
+        schema = {
+            "id": cls.ScimInfo.schema,
+            "name": cls.ScimInfo.name,
+            "description": cls.ScimInfo.description,
+            "attributes": attributes,
+            "meta": {
+                "resourceType": "Schema",
+                "location": "{basepath}/Schemas/" + cls.ScimInfo.schema
+            }
+        }
+        return schema
+
+class Extension(ResourceBase):
     """Base class for SCIM extensions"""
 
-    def get_schema(self):
-        attributes = super().get_schema()
+    class ScimInfo(ResourceBase.ScimInfo):
+        # Note on naming this class, did not pick Metadata, or Schema or variants
+        # thereof since these are already keys in the SCIM schema representation
+        """Metadata for the SCIM object"""
+
+        # Left name undefined on purpose, should be overridden by subclasses
+        id = classproperty(lambda cls: cls.name)
+        schema = classproperty(lambda cls: f'urn:ietf:params:scim:schemas:extension:2.0:{cls.name}')
+        description = ""
+
+

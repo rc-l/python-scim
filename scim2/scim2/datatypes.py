@@ -71,7 +71,10 @@ class DateTime(DataTypeBase):
         
     @classmethod
     def prep_json(cls, value):
-        return value.isoformat()
+        if value:
+            return value.isoformat()
+        else:
+            return None
 
 class Binary(DataTypeBase):
     name = "binary"
